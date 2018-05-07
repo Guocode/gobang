@@ -13,11 +13,11 @@ last edited: January 2015
 """
  
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton ,QLabel, QLineEdit, QCheckBox ,QRadioButton 
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton ,QLabel, QLineEdit, QCheckBox ,QRadioButton ,QComboBox
 from PyQt5.QtGui import QPainter,QColor,QPen, QPixmap,QIcon
 from PyQt5.QtCore import Qt
 import numpy as np
-from PyQt5.Qt import QFont
+from PyQt5.Qt import QFont,QDialog
 
 class Chess():
     def __init__(self,owner=0,pos=0):
@@ -60,7 +60,7 @@ class Chessboard(object):
                     return self.status[l] 
                 
                 c = j * 15 + i #按列
-                if(self.status[c]==self.status[c+1] and self.status[c]!=0):
+                if(self.status[c]==self.status[c+15] and self.status[c]!=0):
                     c_count+=1
                 else:
                     c_count = 1
@@ -122,6 +122,7 @@ class WuziqiUI(QWidget):
         self.initUI() #界面绘制交给InitUi方法
         self.Chessboard = Chessboard()
         self.Chess_group = []
+        self.mode = 0 #0代表双人对战 1代表人机对战
         while():
             pass
         
@@ -134,7 +135,7 @@ class WuziqiUI(QWidget):
         self.setWindowTitle('五子棋')
         #设置窗口的图标，引用当前目录下的图片
         self.setWindowIcon(QIcon('cover.jpg'))        
-        self.btn_start = QPushButton('开始', self)
+        self.btn_start = QPushButton('开始游戏', self)
         self.btn_start.setGeometry(680,20,80,30)
         self.btn_start.clicked.connect(self.startGame)
         self.btn_reset = QPushButton('重置', self)
@@ -142,20 +143,30 @@ class WuziqiUI(QWidget):
         self.btn_reset.setGeometry(680,80,80,30)
         self.btn_regret = QPushButton('悔棋', self)
         self.btn_regret.setGeometry(680,140,80,30)
+        self.btn_regret.setVisible(False)
+        #选择模式 人机对战还是人人对战
+        self.modesele = QComboBox(self)
+        self.modesele.addItem("双人对战")
+        self.modesele.addItem("人机对战")
+        self.modesele.move(680,260)
+        self.modesele.activated[str].connect(self.selectMode)
         self.cb1 = QRadioButton('我先走',self)
         self.cb2 = QRadioButton('机器先走',self)
         self.cb1.move(680, 300)
         self.cb2.move(680, 320)
         self.cb1.toggle()
+        self.cb1.setEnabled(False)
+        self.cb2.setEnabled(False)
         self.setGeometry(300, 300, 250, 150)
-        self.setWindowTitle('QCheckBox')
         self.lbl = QLabel(self)
         self.lbl.move(680, 200)
-        self.lbl.setText('游戏未开始！')
+        self.lbl.setText('请点击开始游戏！')
         self.lbl_turn = QLabel(self)
         self.lbl_turn.move(680, 222)
         self.lbl_turn.setText('')
-
+        self.lbl_help = QLabel(self)
+        self.lbl_help.move(700, 600)
+        self.lbl_help.setText('作者:G_zh')
         #显示窗口
         self.show()
         
@@ -189,8 +200,6 @@ class WuziqiUI(QWidget):
             lbl0.setPixmap(self.chess_white)
         lbl0.setScaledContents(True)
         lbl0.setFixedSize(40,40)
-        print(chess.pos//15)
-        print(chess.pos%15)
         lbl0.move(chess.pos%15 * 40 + 20,chess.pos//15 *40 + 20)
         lbl0.setVisible(True)
         self.Chess_group.append(lbl0)
@@ -198,7 +207,6 @@ class WuziqiUI(QWidget):
         return
     
     def mousePressEvent(self, e):
-        print(e.x(),e.y())
         if (e.x()>20 and e.x()<620)and(e.y()>20 and e.y()<620) and (self.Chessboard.turn!=0): #在棋盘内点击并且游戏已经开始
             new_x = ((e.x()%40>20)+e.x()//40)
             new_y = ((e.y()%40>20)+e.y()//40)
@@ -255,17 +263,28 @@ class WuziqiUI(QWidget):
             print('start!')
         else:
             print('already start!') 
+        self.btn_start.setEnabled(False)
         
     def resetGame(self):
-        print('重置游戏')
-        
         self.Chessboard.resetBoard()
         for chess_ui in self.Chess_group:
             chess_ui.setVisible(False)
-        chess_ui.clear()
-        self.lbl.setText('游戏未开始！')
+        self.Chess_group.clear()
+        self.lbl.setText('请点击开始游戏！')
         self.lbl_turn.setText('')
+        self.btn_start.setEnabled(True)
         return    
+    
+    def selectMode(self,str):
+        if str=="双人对战":
+            self.modesele = 0
+            self.cb1.setEnabled(False)
+            self.cb2.setEnabled(False)
+        else:
+            self.modesele = 1
+            self.cb1.setEnabled(True)
+            self.cb2.setEnabled(True)
+            
 if __name__ == '__main__':
     #每一pyqt5应用程序必须创建一个应用程序对象。sys.argv参数是一个列表，从命令行输入参数。
     app = QApplication(sys.argv)
